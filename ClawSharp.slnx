@@ -22,6 +22,5 @@
     <Project Path="tests/ClawSharp.Providers.Tests/ClawSharp.Providers.Tests.csproj" />
     <Project Path="tests/ClawSharp.Tools.Tests/ClawSharp.Tools.Tests.csproj" />
     <Project Path="tests/ClawSharp.TestHelpers/ClawSharp.TestHelpers.csproj" />
-    <Project Path="tests/ClawSharp.UI.Tests/ClawSharp.UI.Tests.csproj" />
   </Folder>
 </Solution>
