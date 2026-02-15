@@ -26,4 +26,5 @@ public class SlackChannelConfig
     public string? BotToken { get; set; }
     public string? AppToken { get; set; }
     public string? SigningSecret { get; set; }
+    public List<string> AllowedChannels { get; set; } = [];
 }

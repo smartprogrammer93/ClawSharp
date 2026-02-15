@@ -1,0 +1,82 @@
+@page "/memory"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+
+<PageTitle>Memory Browser - ClawSharp</PageTitle>
+
+<h1>Memory Browser</h1>
+
+<div class="memory-browser">
+    <div class="filters">
+        <input @bind="searchQuery" placeholder="Search memories..." class="search-input" />
+        <select @bind="filterType" class="filter-select">
+            <option value="">All Types</option>
+            <option value="session">Sessions</option>
+            <option value="longterm">Long-term</option>
+            <option value="daily">Daily Notes</option>
+        </select>
+    </div>
+    
+    <div class="memory-list">
+        @if (memories.Count == 0)
+        {
+            <p class="empty">No memories found. Start a conversation to create memories.</p>
+        }
+        else
+        {
+            @foreach (var memory in filteredMemories)
+            {
+                <div class="memory-item">
+                    <div class="memory-header">
+                        <span class="memory-type">@memory.Type</span>
+                        <span class="memory-date">@memory.Timestamp.ToString("yyyy-MM-dd HH:mm")</span>
+                    </div>
+                    <div class="memory-content">@memory.Content</div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private string searchQuery = "";
+    private string filterType = "";
+    private List<MemoryItem> memories = [];
+    
+    private IEnumerable<MemoryItem> filteredMemories => memories
+        .Where(m => string.IsNullOrEmpty(filterType) || m.Type.Equals(filterType, StringComparison.OrdinalIgnoreCase))
+        .Where(m => string.IsNullOrEmpty(searchQuery) || m.Content.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(m => m.Timestamp);
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/agent"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+        
+        // Load sample memories (in real app, this would fetch from API)
+        LoadSampleMemories();
+    }
+
+    private void LoadSampleMemories()
+    {
+        // Sample data for demonstration
+        memories = new List<MemoryItem>
+        {
+            new MemoryItem { Type = "session", Timestamp = DateTime.Now.AddHours(-1), Content = "User asked about weather in Johor" },
+            new MemoryItem { Type = "daily", Timestamp = DateTime.Now.AddDays(-1), Content = "Checked email - no urgent messages" },
+            new MemoryItem { Type = "longterm", Timestamp = DateTime.Now.AddDays(-7), Content = "User prefers voice responses for stories" }
+        };
+    }
+
+    private class MemoryItem
+    {
+        public string Type { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public string Content { get; set; } = "";
+    }
+}

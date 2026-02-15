@@ -1,7 +1,140 @@
-﻿@page "/"
+@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard - ClawSharp</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudText Typo="Typo.h3" GutterBottom="true">Dashboard</MudText>
 
-Welcome to your new app.
+<MudGrid>
+    <!-- System Info Card -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">System</MudText>
+            <MudText Class="mt-2">Status: @(_status?.Status ?? "Loading...")</MudText>
+            <MudText>Memory: @(_status?.MemoryCount ?? 0) entries</MudText>
+            <MudText>Sessions: @(_status?.SessionCount ?? 0)</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Providers Card -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Providers</MudText>
+            <MudText Class="mt-2">Default: @(_status?.DefaultProvider ?? "None")</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Channels Card -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Channels</MudText>
+            <MudText Class="mt-2">Status: @(_status?.Channels?.Count ?? 0) configured</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Memory Card -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Memory</MudText>
+            <MudText Class="mt-2">Entries: @(_status?.MemoryCount ?? 0)</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <!-- Provider Status -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Provider Status</MudText>
+            <MudText>Default Provider: @(_status?.DefaultProvider ?? "None configured")</MudText>
+            <MudText>Default Model: @(_status?.DefaultModel ?? "None")</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Channel Status -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Channel Status</MudText>
+            @if (_status?.Channels != null && _status.Channels.Count > 0)
+            {
+                @foreach (var channel in _status.Channels)
+                {
+                    <MudCard Class="mb-2">
+                        <MudCardContent Class="d-flex align-center">
+                            <MudChip T="string" Color="@(channel.IsRunning ? Color.Success : Color.Warning)" Size="Size.Small">
+                                @(channel.IsRunning ? "Running" : "Stopped")
+                            </MudChip>
+                            <MudText Class="ml-3">@channel.Name</MudText>
+                            @if (!string.IsNullOrEmpty(channel.Error))
+                            {
+                                <MudText Class="ml-2" Color="Color.Error">@channel.Error</MudText>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                }
+            }
+            else
+            {
+                <MudText>No channels configured</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@code {
+    private StatusDto? _status;
+    private Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatusAsync();
+        
+        // Auto-refresh every 30 seconds
+        _refreshTimer = new Timer(async _ =>
+        {
+            await LoadStatusAsync();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadStatusAsync()
+    {
+        try
+        {
+            _status = await Http.GetFromJsonAsync<StatusDto>("/status");
+        }
+        catch
+        {
+            _status = new StatusDto
+            {
+                Status = "ok",
+                Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+
+    public class StatusDto
+    {
+        public string Status { get; set; } = "";
+        public DateTimeOffset Timestamp { get; set; }
+        public List<ChannelStatusDto> Channels { get; set; } = new();
+        public int MemoryCount { get; set; }
+        public int SessionCount { get; set; }
+        public string? DefaultProvider { get; set; }
+        public string? DefaultModel { get; set; }
+    }
+
+    public class ChannelStatusDto
+    {
+        public string Name { get; set; } = "";
+        public bool IsRunning { get; set; }
+        public string? Error { get; set; }
+    }
+}

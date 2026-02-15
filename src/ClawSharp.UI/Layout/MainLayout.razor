@@ -1,4 +1,9 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -6,7 +11,7 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <span class="text-muted">ClawSharp</span>
         </div>
 
         <article class="content px-4">
@@ -14,3 +19,32 @@
         </article>
     </main>
 </div>
+
+<style>
+    .page {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    main {
+        flex: 1;
+    }
+
+    .sidebar {
+        background-image: linear-gradient(180deg, rgb(34, 34, 34) 0%, rgb(17, 17, 17) 70%);
+    }
+
+    .top-row {
+        background-color: #f7f7f7;
+        border-bottom: 1px solid #d6d5d5;
+        justify-content: flex-end;
+        height: 3.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .content {
+        padding-top: 1.1rem;
+    }
+</style>

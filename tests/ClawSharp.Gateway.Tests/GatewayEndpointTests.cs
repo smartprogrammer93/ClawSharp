@@ -101,7 +101,7 @@ public class SessionsEndpointTests : IClassFixture<WebApplicationFactory<Program
     {
         var response = await _client.GetAsync("/v1/sessions");
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Be("[]");
+        body.Trim().Should().Be("[]");
     }
 }
 

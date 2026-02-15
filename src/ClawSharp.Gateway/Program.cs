@@ -2,6 +2,7 @@ using ClawSharp.Agent;
 using ClawSharp.Channels;
 using ClawSharp.Core.Channels;
 using ClawSharp.Core.Config;
+using ClawSharp.Core.Memory;
 using ClawSharp.Core.Providers;
 using ClawSharp.Core.Sessions;
 using ClawSharp.Core.Tools;
@@ -10,6 +11,7 @@ using ClawSharp.Gateway.Endpoints;
 using ClawSharp.Gateway.Hubs;
 using ClawSharp.Infrastructure;
 using ClawSharp.Infrastructure.Messaging;
+using ClawSharp.Memory;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +57,12 @@ builder.Services.AddSingleton<IToolRegistry>(sp =>
 // Add agent loop
 builder.Services.AddSingleton<AgentLoop>();
 
+// Add memory store (in-memory for now)
+builder.Services.AddSingleton<IMemoryStore>(sp =>
+{
+    return new SqliteMemoryStore(":memory:");
+});
+
 // Add channel collection (empty for now)
 builder.Services.AddSingleton<IReadOnlyList<IChannel>>(sp => []);
 
@@ -69,11 +77,18 @@ if (app.Environment.IsDevelopment())
 // Remove HTTPS redirection for local development
 // app.UseHttpsRedirection();
 
+// Serve Blazor WASM static files
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
 // Map Gateway endpoints
 app.MapGatewayEndpoints();
 
 // Map SignalR hubs
 app.MapHub<AgentHub>("/hubs/agent");
+
+// Serve index.html for all non-API/non-Hub routes (Blazor SPA fallback)
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

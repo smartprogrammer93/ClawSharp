@@ -1,0 +1,275 @@
+@page "/chat"
+
+<PageTitle>Chat - ClawSharp</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Chat</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="9">
+        <!-- Chat Messages -->
+        <MudPaper Class="pa-4" Style="height: 60vh; overflow-y: auto;">
+            @foreach (var message in _messages)
+            {
+                <MudCard Class="mb-4" Style="@(message.IsUser ? "background-color: var(--mud-palette-background-grey)" : "")">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">
+                                <strong>@(message.IsUser ? "You" : "Assistant")</strong>
+                            </MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudText Typo="Typo.caption" Color="Color.Default">
+                                @message.Timestamp.ToLocalTime().ToString("HH:mm:ss")
+                            </MudText>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText>@message.Content</MudText>
+                        
+                        <!-- Tool Executions -->
+                        @if (message.ToolExecutions.Count > 0)
+                        {
+                            <MudDivider Class="my-3" />
+                            <MudText Typo="Typo.subtitle2" GutterBottom="true">Tool Executions</MudText>
+                            @foreach (var tool in message.ToolExecutions)
+                            {
+                                <MudCard Class="mb-2" Outlined="true">
+                                    <MudCardContent>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="mr-2" />
+                                            <strong>@tool.ToolName</strong>
+                                            @if (tool.Success)
+                                            {
+                                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-2">Success</MudChip>
+                                            }
+                                            else if (!string.IsNullOrEmpty(tool.Error))
+                                            {
+                                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Class="ml-2">Error</MudChip>
+                                            }
+                                            else
+                                            {
+                                                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="ml-2">Running</MudChip>
+                                            }
+                                        </div>
+                                        <MudText Typo="Typo.caption" Class="mt-1">Arguments: @tool.ArgumentsJson</MudText>
+                                        @if (!string.IsNullOrEmpty(tool.Output))
+                                        {
+                                            <MudText Typo="Typo.body2" Class="mt-1">Result: @tool.Output</MudText>
+                                        }
+                                        @if (!string.IsNullOrEmpty(tool.Error))
+                                        {
+                                            <MudText Typo="Typo.body2" Color="Color.Error" Class="mt-1">Error: @tool.Error</MudText>
+                                        }
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        }
+                    </MudCardContent>
+                </MudCard>
+            }
+
+            @if (_isProcessing)
+            {
+                <MudCard Class="mb-4">
+                    <MudCardContent Class="d-flex align-center">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" Class="mr-2" />
+                        <MudText>Processing...</MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudPaper>
+
+        <!-- Message Input -->
+        <MudPaper Class="pa-4 mt-2">
+            <MudGrid>
+                <MudItem xs="10">
+                    <MudTextField @bind-Value="_inputMessage" 
+                                  Label="Type your message..." 
+                                  Variant="Variant.Outlined" 
+                                  FullWidth="true"
+                                  Disabled="_isProcessing"
+                                  @onkeypress="HandleKeyPress" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               FullWidth="true"
+                               OnClick="SendMessage"
+                               Disabled="_isProcessing || string.IsNullOrWhiteSpace(_inputMessage)">
+                        Send
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Sidebar -->
+    <MudItem xs="12" md="3">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Options</MudText>
+            
+            <MudTextField @bind-Value="_sessionKey" 
+                          Label="Session Key" 
+                          Variant="Variant.Outlined" 
+                          FullWidth="true" 
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_model" 
+                          Label="Model" 
+                          Variant="Variant.Outlined" 
+                          FullWidth="true" 
+                          Placeholder="default"
+                          Class="mb-2" />
+
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Secondary" 
+                       FullWidth="true"
+                       OnClick="ClearChat">
+                Clear Chat
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject HttpClient Http
+
+@code {
+    private string _inputMessage = "";
+    private string _sessionKey = "";
+    private string _model = "";
+    private bool _isProcessing;
+    private List<ChatMessage> _messages = new();
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_inputMessage) || _isProcessing)
+            return;
+
+        var userMessage = _inputMessage;
+        _inputMessage = "";
+        _isProcessing = true;
+
+        // Add user message to chat
+        _messages.Add(new ChatMessage
+        {
+            IsUser = true,
+            Content = userMessage,
+            Timestamp = DateTimeOffset.UtcNow
+        });
+
+        // Add placeholder for assistant response
+        _messages.Add(new ChatMessage
+        {
+            IsUser = false,
+            Content = "",
+            Timestamp = DateTimeOffset.UtcNow
+        });
+
+        try
+        {
+            var request = new ChatRequest
+            {
+                Message = userMessage,
+                SessionKey = string.IsNullOrWhiteSpace(_sessionKey) ? null : _sessionKey,
+                Model = string.IsNullOrWhiteSpace(_model) ? null : _model
+            };
+            
+            var response = await Http.PostAsJsonAsync("/v1/agent", request);
+            var result = await response.Content.ReadFromJsonAsync<ChatResponse>();
+            
+            if (result != null)
+            {
+                var lastMessage = _messages.LastOrDefault();
+                if (lastMessage != null)
+                {
+                    lastMessage.Content = result.Response;
+                    _sessionKey = result.SessionKey ?? _sessionKey;
+                    
+                    if (result.ToolExecutions != null)
+                    {
+                        foreach (var tool in result.ToolExecutions)
+                        {
+                            lastMessage.ToolExecutions.Add(new ToolExecutionDisplay
+                            {
+                                ToolName = tool.ToolName,
+                                ArgumentsJson = tool.ArgumentsJson,
+                                Success = tool.Success,
+                                Output = tool.Output,
+                                Error = tool.Error
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var lastMessage = _messages.LastOrDefault();
+            if (lastMessage != null)
+            {
+                lastMessage.Content = $"Error: {ex.Message}";
+            }
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !_isProcessing && !string.IsNullOrWhiteSpace(_inputMessage))
+        {
+            await SendMessage();
+        }
+    }
+
+    private void ClearChat()
+    {
+        _messages.Clear();
+        _sessionKey = "";
+    }
+
+    public class ChatMessage
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Content { get; set; } = "";
+        public bool IsUser { get; set; }
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+        public List<ToolExecutionDisplay> ToolExecutions { get; set; } = new();
+    }
+
+    public class ToolExecutionDisplay
+    {
+        public string ToolCallId { get; set; } = "";
+        public string ToolName { get; set; } = "";
+        public string ArgumentsJson { get; set; } = "";
+        public bool Success { get; set; }
+        public string? Output { get; set; }
+        public string? Error { get; set; }
+    }
+
+    public class ChatRequest
+    {
+        public string Message { get; set; } = "";
+        public string? SessionKey { get; set; }
+        public string? Model { get; set; }
+    }
+
+    public class ChatResponse
+    {
+        public string Response { get; set; } = "";
+        public string? SessionKey { get; set; }
+        public List<ToolExecutionInfo>? ToolExecutions { get; set; }
+    }
+
+    public class ToolExecutionInfo
+    {
+        public string ToolCallId { get; set; } = "";
+        public string ToolName { get; set; } = "";
+        public string ArgumentsJson { get; set; } = "";
+        public bool Success { get; set; }
+        public string? Output { get; set; }
+        public string? Error { get; set; }
+    }
+}

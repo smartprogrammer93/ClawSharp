@@ -1,0 +1,99 @@
+@page "/sessions"
+
+<PageTitle>Sessions - ClawSharp</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Sessions</MudText>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="LoadSessions"
+                       Class="mb-4">
+                Refresh
+            </MudButton>
+
+            <MudTable Items="_sessions" Loading="_isLoading" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Session Key</MudTh>
+                    <MudTh>Channel</MudTh>
+                    <MudTh>Chat ID</MudTh>
+                    <MudTh>Messages</MudTh>
+                    <MudTh>Created</MudTh>
+                    <MudTh>Last Active</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Session Key">@context.SessionKey</MudTd>
+                    <MudTd DataLabel="Channel">@context.Channel</MudTd>
+                    <MudTd DataLabel="Chat ID">@context.ChatId</MudTd>
+                    <MudTd DataLabel="Messages">@context.MessageCount</MudTd>
+                    <MudTd DataLabel="Created">@context.Created.ToString("g")</MudTd>
+                    <MudTd DataLabel="Last Active">@context.LastActive.ToString("g")</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       OnClick="() => DeleteSession(context.SessionKey)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@code {
+    private bool _isLoading;
+    private List<SessionInfo> _sessions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSessions()
+    {
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _sessions = await Http.GetFromJsonAsync<List<SessionInfo>>("/v1/sessions") ?? new List<SessionInfo>();
+        }
+        catch
+        {
+            _sessions = new List<SessionInfo>();
+        }
+        _isLoading = false;
+    }
+
+    private async Task DeleteSession(string sessionKey)
+    {
+        try
+        {
+            // Sessions deletion would need an endpoint - for now just refresh
+            await LoadSessionsAsync();
+        }
+        catch
+        {
+            // Handle error
+        }
+    }
+
+    public class SessionInfo
+    {
+        public string SessionKey { get; set; } = "";
+        public string Channel { get; set; } = "";
+        public string ChatId { get; set; } = "";
+        public string? Summary { get; set; }
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset LastActive { get; set; }
+        public int MessageCount { get; set; }
+    }
+}

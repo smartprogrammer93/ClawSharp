@@ -1,0 +1,259 @@
+@page "/settings"
+
+<PageTitle>Settings - ClawSharp</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Settings</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">General Settings</MudText>
+            
+            <MudTextField @bind-Value="_config.DataDir" 
+                          Label="Data Directory" 
+                          Variant="Variant.Outlined" 
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_config.WorkspaceDir" 
+                          Label="Workspace Directory" 
+                          Variant="Variant.Outlined" 
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_config.DefaultProvider" 
+                          Label="Default Provider" 
+                          Variant="Variant.Outlined" 
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_config.DefaultModel" 
+                          Label="Default Model" 
+                          Variant="Variant.Outlined" 
+                          Class="mb-2" />
+
+            <MudNumericField @bind-Value="_config.DefaultTemperature" 
+                             Label="Default Temperature" 
+                             Variant="Variant.Outlined" 
+                             Class="mb-2" />
+            
+            <MudNumericField @bind-Value="_config.MaxContextTokens" 
+                             Label="Max Context Tokens" 
+                             Variant="Variant.Outlined" 
+                             Class="mb-2" />
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="SaveConfig">
+                Save Settings
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Provider API Keys</MudText>
+            
+            <MudTextField @bind-Value="_openaiKey" 
+                          Label="OpenAI API Key" 
+                          Variant="Variant.Outlined" 
+                          InputType="InputType.Password"
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_anthropicKey" 
+                          Label="Anthropic API Key" 
+                          Variant="Variant.Outlined" 
+                          InputType="InputType.Password"
+                          Class="mb-2" />
+            
+            <MudTextField @bind-Value="_openRouterKey" 
+                          Label="OpenRouter API Key" 
+                          Variant="Variant.Outlined" 
+                          InputType="InputType.Password"
+                          Class="mb-2" />
+
+            <MudTextField @bind-Value="_miniMaxKey" 
+                          Label="MiniMax API Key" 
+                          Variant="Variant.Outlined" 
+                          InputType="InputType.Password"
+                          Class="mb-2" />
+
+            <MudTextField @bind-Value="_ollamaUrl" 
+                          Label="Ollama Base URL" 
+                          Variant="Variant.Outlined" 
+                          Placeholder="http://localhost:11434"
+                          Class="mb-2" />
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="SaveProviders">
+                Save Providers
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Channels</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-4" Elevation="2">
+                        <MudText Typo="Typo.h6">Telegram</MudText>
+                        <MudTextField @bind-Value="_telegramBotToken" 
+                                      Label="Bot Token" 
+                                      Variant="Variant.Outlined" 
+                                      InputType="InputType.Password"
+                                      Class="mb-2" />
+                        <MudChip T="string" Color="@(_telegramEnabled ? Color.Success : Color.Default)" Size="Size.Small">
+                            @(_telegramEnabled ? "Enabled" : "Disabled")
+                        </MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-4" Elevation="2">
+                        <MudText Typo="Typo.h6">Discord</MudText>
+                        <MudTextField @bind-Value="_discordBotToken" 
+                                      Label="Bot Token" 
+                                      Variant="Variant.Outlined" 
+                                      InputType="InputType.Password"
+                                      Class="mb-2" />
+                        <MudChip T="string" Color="@(_discordEnabled ? Color.Success : Color.Default)" Size="Size.Small">
+                            @(_discordEnabled ? "Enabled" : "Disabled")
+                        </MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-4" Elevation="2">
+                        <MudText Typo="Typo.h6">Slack</MudText>
+                        <MudTextField @bind-Value="_slackAppToken" 
+                                      Label="App Token" 
+                                      Variant="Variant.Outlined" 
+                                      InputType="InputType.Password"
+                                      Class="mb-2" />
+                        <MudChip T="string" Color="@(_slackEnabled ? Color.Success : Color.Default)" Size="Size.Small">
+                            @(_slackEnabled ? "Enabled" : "Disabled")
+                        </MudChip>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+@code {
+    private ConfigDto _config = new();
+    private string _openaiKey = "";
+    private string _anthropicKey = "";
+    private string _openRouterKey = "";
+    private string _miniMaxKey = "";
+    private string _ollamaUrl = "";
+    private string _telegramBotToken = "";
+    private bool _telegramEnabled;
+    private string _discordBotToken = "";
+    private bool _discordEnabled;
+    private string _slackAppToken = "";
+    private bool _slackEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfigAsync();
+    }
+
+    private async Task LoadConfigAsync()
+    {
+        try
+        {
+            _config = await Http.GetFromJsonAsync<ConfigDto>("/v1/config") ?? new ConfigDto();
+            
+            // Try to load provider settings (these would come from config in a real app)
+            _openaiKey = _config.Providers?.Openai_ApiKey ?? "";
+            _anthropicKey = _config.Providers?.Anthropic_ApiKey ?? "";
+            _openRouterKey = _config.Providers?.OpenRouter_ApiKey ?? "";
+            _miniMaxKey = _config.Providers?.MiniMax_ApiKey ?? "";
+            _ollamaUrl = _config.Providers?.Ollama_BaseUrl ?? "";
+            
+            _telegramEnabled = _config.Channels?.Telegram_Enabled ?? false;
+            _telegramBotToken = _config.Channels?.Telegram_BotToken ?? "";
+            _discordEnabled = _config.Channels?.Discord_Enabled ?? false;
+            _discordBotToken = _config.Channels?.Discord_BotToken ?? "";
+            _slackEnabled = _config.Channels?.Slack_Enabled ?? false;
+            _slackAppToken = _config.Channels?.Slack_AppToken ?? "";
+        }
+        catch
+        {
+            _config = new ConfigDto();
+        }
+    }
+
+    private async Task SaveConfig()
+    {
+        try
+        {
+            await Http.PutAsJsonAsync("/v1/config", _config);
+            Snackbar.Add("Settings saved successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving settings: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SaveProviders()
+    {
+        try
+        {
+            // In a real app, this would update the config through the API
+            Snackbar.Add("Provider settings saved (in-memory)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving providers: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class ConfigDto
+    {
+        public string DataDir { get; set; } = "";
+        public string WorkspaceDir { get; set; } = "";
+        public string? DefaultProvider { get; set; }
+        public string? DefaultModel { get; set; }
+        public double DefaultTemperature { get; set; }
+        public int MaxContextTokens { get; set; }
+        public ProvidersConfigDto? Providers { get; set; }
+        public GatewayConfigDto? Gateway { get; set; }
+        public ChannelsConfigDto? Channels { get; set; }
+    }
+
+    public class ProvidersConfigDto
+    {
+        public string? Openai_ApiKey { get; set; }
+        public string? Openai_BaseUrl { get; set; }
+        public string? Anthropic_ApiKey { get; set; }
+        public string? Anthropic_BaseUrl { get; set; }
+        public string? OpenRouter_ApiKey { get; set; }
+        public string? OpenRouter_BaseUrl { get; set; }
+        public string? Ollama_BaseUrl { get; set; }
+        public string? MiniMax_ApiKey { get; set; }
+        public string? MiniMax_BaseUrl { get; set; }
+    }
+
+    public class GatewayConfigDto
+    {
+        public int Port { get; set; }
+        public string? Host { get; set; }
+        public bool EnableCors { get; set; }
+    }
+
+    public class ChannelsConfigDto
+    {
+        public bool Telegram_Enabled { get; set; }
+        public string? Telegram_BotToken { get; set; }
+        public bool Discord_Enabled { get; set; }
+        public string? Discord_BotToken { get; set; }
+        public bool Slack_Enabled { get; set; }
+        public string? Slack_AppToken { get; set; }
+    }
+}

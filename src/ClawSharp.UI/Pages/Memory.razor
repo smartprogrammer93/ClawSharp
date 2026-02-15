@@ -1,0 +1,178 @@
+@page "/memory"
+
+<PageTitle>Memory - ClawSharp</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Memory</MudText>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudTextField @bind-Value="_searchQuery" 
+                          Label="Search memory..." 
+                          Variant="Variant.Outlined" 
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          @onkeypress="HandleSearchKeyPress"
+                          Class="mb-4" />
+
+            <MudTable Items="_memories" Loading="_isLoading" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Key</MudTh>
+                    <MudTh>Content</MudTh>
+                    <MudTh>Category</MudTh>
+                    <MudTh>Created</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Key">@context.Key</MudTd>
+                    <MudTd DataLabel="Content">@context.Content</MudTd>
+                    <MudTd DataLabel="Category">@context.Category</MudTd>
+                    <MudTd DataLabel="Created">@context.Timestamp</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       OnClick="() => DeleteMemory(context.Key)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Add New Memory</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="_newKey" 
+                                  Label="Key" 
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" @bind-Value="_newCategory" Label="Category" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("Core")">Core</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Session")">Session</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Ephemeral")">Ephemeral</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               FullWidth="true"
+                               OnClick="AddMemory">
+                        Add
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+            <MudGrid Class="mt-2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_newContent" 
+                                  Label="Content" 
+                                  Variant="Variant.Outlined"
+                                  Lines="3" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@code {
+    private string _searchQuery = "";
+    private string _newKey = "";
+    private string _newContent = "";
+    private string _newCategory = "Core";
+    private bool _isLoading;
+    private List<MemoryEntryDto> _memories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMemoriesAsync();
+    }
+
+    private async Task LoadMemoriesAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _memories = await Http.GetFromJsonAsync<List<MemoryEntryDto>>("/v1/memory") ?? new List<MemoryEntryDto>();
+        }
+        catch
+        {
+            _memories = new List<MemoryEntryDto>();
+        }
+        _isLoading = false;
+    }
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            await LoadMemoriesAsync();
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _memories = await Http.GetFromJsonAsync<List<MemoryEntryDto>>($"/v1/memory?query={Uri.EscapeDataString(_searchQuery)}") ?? new List<MemoryEntryDto>();
+        }
+        catch
+        {
+            _memories = new List<MemoryEntryDto>();
+        }
+        _isLoading = false;
+    }
+
+    private async Task HandleSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Search();
+        }
+    }
+
+    private async Task AddMemory()
+    {
+        if (string.IsNullOrWhiteSpace(_newKey) || string.IsNullOrWhiteSpace(_newContent))
+            return;
+
+        try
+        {
+            await Http.PostAsJsonAsync("/v1/memory", new { key = _newKey, content = _newContent, category = _newCategory });
+            _newKey = "";
+            _newContent = "";
+            await LoadMemoriesAsync();
+        }
+        catch
+        {
+            // Handle error
+        }
+    }
+
+    private async Task DeleteMemory(string key)
+    {
+        try
+        {
+            await Http.DeleteAsync($"/v1/memory/{Uri.EscapeDataString(key)}");
+            await LoadMemoriesAsync();
+        }
+        catch
+        {
+            // Handle error
+        }
+    }
+
+    public class MemoryEntryDto
+    {
+        public string Id { get; set; } = "";
+        public string Key { get; set; } = "";
+        public string Content { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Timestamp { get; set; } = "";
+        public string? SessionId { get; set; }
+    }
+}
