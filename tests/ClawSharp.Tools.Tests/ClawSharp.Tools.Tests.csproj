@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ClawSharp.Tools\ClawSharp.Tools.csproj" />
     <ProjectReference Include="..\..\src\ClawSharp.Core\ClawSharp.Core.csproj" />
+    <ProjectReference Include="..\ClawSharp.TestHelpers\ClawSharp.TestHelpers.csproj" />
   </ItemGroup>
 
 </Project>
