@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClawSharp.Core\ClawSharp.Core.csproj" />
+    <ProjectReference Include="..\ClawSharp.Providers\ClawSharp.Providers.csproj" />
+    <ProjectReference Include="..\ClawSharp.Tools\ClawSharp.Tools.csproj" />
+    <ProjectReference Include="..\ClawSharp.Memory\ClawSharp.Memory.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

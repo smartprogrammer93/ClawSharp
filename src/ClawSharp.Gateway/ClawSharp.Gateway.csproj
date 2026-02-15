@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClawSharp.Agent\ClawSharp.Agent.csproj" />
+    <ProjectReference Include="..\ClawSharp.Infrastructure\ClawSharp.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

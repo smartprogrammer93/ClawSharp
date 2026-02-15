@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ClawSharp.Agent/ClawSharp.Agent.csproj" />
+    <Project Path="src/ClawSharp.Channels/ClawSharp.Channels.csproj" />
+    <Project Path="src/ClawSharp.Cli/ClawSharp.Cli.csproj" />
+    <Project Path="src/ClawSharp.Core/ClawSharp.Core.csproj" />
+    <Project Path="src/ClawSharp.Gateway/ClawSharp.Gateway.csproj" />
+    <Project Path="src/ClawSharp.Infrastructure/ClawSharp.Infrastructure.csproj" />
+    <Project Path="src/ClawSharp.Memory/ClawSharp.Memory.csproj" />
+    <Project Path="src/ClawSharp.Providers/ClawSharp.Providers.csproj" />
+    <Project Path="src/ClawSharp.Tools/ClawSharp.Tools.csproj" />
+    <Project Path="src/ClawSharp.UI/ClawSharp.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClawSharp.Agent.Tests/ClawSharp.Agent.Tests.csproj" />
+    <Project Path="tests/ClawSharp.Core.Tests/ClawSharp.Core.Tests.csproj" />
+  </Folder>
+</Solution>

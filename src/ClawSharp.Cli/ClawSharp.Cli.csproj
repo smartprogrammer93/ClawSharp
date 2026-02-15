@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClawSharp.Agent\ClawSharp.Agent.csproj" />
+    <ProjectReference Include="..\ClawSharp.Infrastructure\ClawSharp.Infrastructure.csproj" />
+    <ProjectReference Include="..\ClawSharp.Gateway\ClawSharp.Gateway.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
