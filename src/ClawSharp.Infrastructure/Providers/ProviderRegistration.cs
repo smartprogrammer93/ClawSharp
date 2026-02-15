@@ -1,4 +1,5 @@
 using ClawSharp.Agent;
+using ClawSharp.Core.Auth;
 using ClawSharp.Core.Config;
 using ClawSharp.Core.Memory;
 using ClawSharp.Core.Providers;
@@ -34,10 +35,30 @@ public static class ProviderRegistration
             return new OpenAiProvider(factory.CreateClient("openai"), logger);
         });
 
+        // Anthropic provider - check if OAuth is configured
         services.AddSingleton<AnthropicProvider>(sp =>
         {
             var factory = sp.GetRequiredService<IHttpClientFactory>();
             var logger = sp.GetRequiredService<ILogger<AnthropicProvider>>();
+            var config = sp.GetRequiredService<ClawSharpConfig>();
+            var providerConfig = config.Providers.Anthropic;
+            
+            // Check if OAuth mode is enabled
+            if (providerConfig?.AuthMode?.ToLowerInvariant() == "oauth")
+            {
+                var profileId = providerConfig.AuthProfileId ?? "anthropic:default";
+                var profilesPath = providerConfig.AuthProfilesPath 
+                    ?? Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        ".openclaw", "agents", "main", "agent", "auth-profiles.json");
+                
+                var tokenManagerLogger = sp.GetService<ILogger<OAuthTokenManager>>();
+                var tokenManager = new OAuthTokenManager(profilesPath, profileId, tokenManagerLogger);
+                
+                return new AnthropicProvider(factory.CreateClient("anthropic"), logger, tokenManager);
+            }
+            
+            // Default to API key mode
             return new AnthropicProvider(factory.CreateClient("anthropic"), logger);
         });
 
@@ -120,7 +141,7 @@ public static class ProviderRegistration
         {
             var config = sp.GetRequiredService<ClawSharpConfig>();
             var dbPath = Path.Combine(config.DataDir, "sessions.db");
-            return new SqliteSessionManager(dbPath);
+            return new SqliteSessionManager($"Data Source={dbPath}");
         });
 
         // Memory store
@@ -128,7 +149,7 @@ public static class ProviderRegistration
         {
             var config = sp.GetRequiredService<ClawSharpConfig>();
             var dbPath = Path.Combine(config.DataDir, config.Memory.DbPath ?? "memory.db");
-            return new SqliteMemoryStore(dbPath);
+            return new SqliteMemoryStore($"Data Source={dbPath}");
         });
 
         // Context builder

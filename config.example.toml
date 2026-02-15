@@ -29,9 +29,14 @@ api_key = "sk-..."                   # Your OpenAI API key
 default_model = "gpt-4o"
 
 [providers.anthropic]
-api_key = "sk-ant-..."              # Your Anthropic API key
+api_key = "sk-ant-..."              # Your Anthropic API key (used when auth_mode is "api_key")
 # base_url = "https://api.anthropic.com"
 default_model = "claude-sonnet-4-20250514"
+
+# OAuth authentication (alternative to api_key)
+# auth_mode = "oauth"               # Set to "oauth" to use OAuth tokens from auth-profiles.json
+# auth_profile_id = "anthropic:default"  # Profile ID in auth-profiles.json
+# auth_profiles_path = "~/.openclaw/agents/main/agent/auth-profiles.json"
 
 [providers.openrouter]
 api_key = "sk-or-..."               # Your OpenRouter API key

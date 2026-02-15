@@ -1,5 +1,7 @@
+using ClawSharp.Core.Auth;
 using ClawSharp.Core.Config;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ClawSharp.Infrastructure.Http;
 
@@ -26,15 +28,38 @@ public static class HttpClientRegistration
             client.Timeout = TimeSpan.FromSeconds(120);
         });
 
-        // Anthropic client
+        // Anthropic client - supports both api_key and oauth modes
         services.AddHttpClient("anthropic", (sp, client) =>
         {
             var config = sp.GetRequiredService<ClawSharpConfig>();
-            client.BaseAddress = new Uri("https://api.anthropic.com");
-            if (config.Providers.Anthropic?.ApiKey is { } key)
-                client.DefaultRequestHeaders.Add("x-api-key", key);
+            var providerConfig = config.Providers.Anthropic;
+            var authMode = providerConfig?.AuthMode?.ToLowerInvariant() ?? "api_key";
+            
+            client.BaseAddress = new Uri(providerConfig?.BaseUrl ?? "https://api.anthropic.com");
             client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
             client.Timeout = TimeSpan.FromSeconds(120);
+            
+            if (authMode == "oauth")
+            {
+                // OAuth mode - the OAuthTokenHandler will add the token
+                // Register the token manager for later use
+                var profileId = providerConfig?.AuthProfileId ?? "anthropic:default";
+                var profilesPath = providerConfig?.AuthProfilesPath 
+                    ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 
+                        ".openclaw", "agents", "main", "agent", "auth-profiles.json");
+                
+                var logger = sp.GetService<ILogger<OAuthTokenManager>>();
+                var tokenManager = new OAuthTokenManager(profilesPath, profileId, logger);
+                
+                // Store the token manager in the service provider for the provider to use
+                services.AddSingleton(tokenManager);
+            }
+            else
+            {
+                // API key mode - use the static API key
+                if (providerConfig?.ApiKey is { } key)
+                    client.DefaultRequestHeaders.Add("x-api-key", key);
+            }
         });
 
         // OpenRouter client

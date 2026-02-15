@@ -9,17 +9,26 @@ namespace ClawSharp.Cli.Commands;
 
 public class AgentCommand : Command
 {
+    private static readonly Option<string?> MessageOption = new("-m", "--message") { Description = "Send a single message" };
+    private static readonly Option<string?> ProviderOption = new("-p", "--provider") { Description = "LLM provider to use" };
+    private static readonly Option<string?> ModelOption = new("--model") { Description = "Model to use" };
+
     public AgentCommand() : base("agent", "Chat with the AI agent")
     {
-        SetAction(_ => ExecuteAsync().GetAwaiter().GetResult());
+        Add(MessageOption);
+        Add(ProviderOption);
+        Add(ModelOption);
+        SetAction(ctx =>
+        {
+            var message = ctx.GetValue(MessageOption);
+            var provider = ctx.GetValue(ProviderOption);
+            var model = ctx.GetValue(ModelOption);
+            return ExecuteAsync(message, provider, model);
+        });
     }
 
-    private static async Task ExecuteAsync()
+    private static async Task ExecuteAsync(string? message, string? provider, string? model)
     {
-        // For now, just use defaults - proper arg parsing can be added later
-        string? message = null;
-        string? provider = null;
-        string? model = null;
 
         // Load configuration
         var config = ConfigLoader.LoadConfig();
