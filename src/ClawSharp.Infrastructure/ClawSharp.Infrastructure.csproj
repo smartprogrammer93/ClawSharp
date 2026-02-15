@@ -2,6 +2,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ClawSharp.Core\ClawSharp.Core.csproj" />
+    <ProjectReference Include="..\ClawSharp.Agent\ClawSharp.Agent.csproj" />
+    <ProjectReference Include="..\ClawSharp.Memory\ClawSharp.Memory.csproj" />
+    <ProjectReference Include="..\ClawSharp.Providers\ClawSharp.Providers.csproj" />
+    <ProjectReference Include="..\ClawSharp.Tools\ClawSharp.Tools.csproj" />
   </ItemGroup>
 
   <ItemGroup>

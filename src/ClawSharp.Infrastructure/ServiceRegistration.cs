@@ -1,12 +1,10 @@
 using ClawSharp.Core.Channels;
 using ClawSharp.Core.Config;
 using ClawSharp.Core.Security;
-using ClawSharp.Core.Tools;
 using ClawSharp.Infrastructure.Messaging;
+using ClawSharp.Infrastructure.Providers;
 using ClawSharp.Infrastructure.Security;
-using ClawSharp.Infrastructure.Tools;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Serilog;
 
 namespace ClawSharp.Infrastructure;
@@ -41,8 +39,16 @@ public static class ServiceRegistration
 
         // Core services
         services.AddSingleton<IMessageBus, InProcessMessageBus>();
-        services.AddSingleton<IToolRegistry, ToolRegistry>();
         services.AddSingleton<ISecurityPolicy, DefaultSecurityPolicy>();
+
+        // LLM Providers
+        services.AddLlmProviders();
+
+        // Tools
+        services.AddTools();
+
+        // Agent services (session manager, context builder, agent loop)
+        services.AddAgentServices();
 
         return services;
     }
