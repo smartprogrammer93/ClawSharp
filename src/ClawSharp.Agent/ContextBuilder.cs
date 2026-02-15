@@ -14,6 +14,11 @@ public class ContextBuilder
     private readonly IToolRegistry _toolRegistry;
     private readonly ClawSharpConfig _config;
 
+    // Personality file names (matching OpenClaw)
+    private const string SoulFileName = "SOUL.md";
+    private const string UserFileName = "USER.md";
+    private const string IdentityFileName = "IDENTITY.md";
+
     public ContextBuilder(
         IMemoryStore memoryStore,
         IToolRegistry toolRegistry,
@@ -25,15 +30,76 @@ public class ContextBuilder
     }
 
     /// <summary>
+    /// Reads a personality file from the workspace directory.
+    /// Returns null if the file doesn't exist.
+    /// </summary>
+    private async Task<string?> ReadPersonalityFileAsync(string fileName, CancellationToken ct = default)
+    {
+        var filePath = Path.Combine(_config.WorkspaceDir, fileName);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            return await File.ReadAllTextAsync(filePath, ct);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Builds the full system prompt including identity, memories, and tools.
     /// </summary>
     public async Task<string> BuildSystemPromptAsync(CancellationToken ct = default)
     {
         var sections = new List<string>();
 
-        // Identity section
-        sections.Add($"# Identity\nYou are ClawSharp, an AI assistant running on .NET.");
+        // Read personality files from workspace
+        var soulContent = await ReadPersonalityFileAsync(SoulFileName, ct);
+        var userContent = await ReadPersonalityFileAsync(UserFileName, ct);
+        var identityContent = await ReadPersonalityFileAsync(IdentityFileName, ct);
+
+        // Identity section - base identity
+        var baseIdentity = "You are ClawSharp, an AI assistant running on .NET.";
+        
+        // If IDENTITY.md exists, use it to customize the identity
+        if (!string.IsNullOrEmpty(identityContent))
+        {
+            var identityLines = identityContent.Split('\n')
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l) && !l.StartsWith("#") && !l.StartsWith("---") && !l.StartsWith("*") && !l.StartsWith("Notes:"))
+                .ToList();
+            
+            // Try to extract name from IDENTITY.md
+            var nameLine = identityLines.FirstOrDefault(l => l.StartsWith("- **Name:**"));
+            if (nameLine != null)
+            {
+                var name = nameLine.Replace("- **Name:**", "").Trim();
+                if (!string.IsNullOrEmpty(name))
+                {
+                    baseIdentity = $"You are {name}, {baseIdentity}";
+                }
+            }
+        }
+        
+        sections.Add($"# Identity\n{baseIdentity}");
         sections.Add($"Current time: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+
+        // SOUL.md - personality and tone guidance
+        if (!string.IsNullOrEmpty(soulContent))
+        {
+            sections.Add($"\n# SOUL.md - Your Persona");
+            sections.Add(soulContent);
+        }
+
+        // USER.md - about the user
+        if (!string.IsNullOrEmpty(userContent))
+        {
+            sections.Add($"\n# USER.md - About the User");
+            sections.Add(userContent);
+        }
 
         // Memories section
         var memories = await _memoryStore.ListAsync(MemoryCategory.Core, limit: 20, ct: ct);
@@ -56,6 +122,13 @@ public class ContextBuilder
                 sections.Add($"## {tool.Name}");
                 sections.Add(tool.Description ?? "No description");
             }
+        }
+
+        // Add guidance about SOUL.md if present
+        if (!string.IsNullOrEmpty(soulContent))
+        {
+            sections.Add("\n## Persona Note");
+            sections.Add("If SOUL.md is present, embody its persona and tone. Avoid stiff, generic replies; follow its guidance unless higher-priority instructions override it.");
         }
 
         return string.Join("\n\n", sections);
