@@ -59,6 +59,23 @@ public static class HttpClientRegistration
             client.Timeout = TimeSpan.FromSeconds(120);
         });
 
+        // MiniMax client - uses Anthropic-compatible API at api.minimax.io
+        services.AddHttpClient("minimax", (sp, client) =>
+        {
+            var config = sp.GetRequiredService<ClawSharpConfig>();
+            var providerConfig = config.Providers.MiniMax;
+            var baseUrl = providerConfig?.BaseUrl ?? "https://api.minimax.io/v1";
+            var apiKey = providerConfig?.ApiKey ?? "";
+            var groupId = providerConfig?.GroupId ?? "";
+            
+            client.BaseAddress = new Uri(baseUrl);
+            if (!string.IsNullOrEmpty(apiKey))
+                client.DefaultRequestHeaders.Authorization = new("Bearer", apiKey);
+            if (!string.IsNullOrEmpty(groupId))
+                client.DefaultRequestHeaders.Add("X-Group-Id", groupId);
+            client.Timeout = TimeSpan.FromSeconds(120);
+        });
+
         return services;
     }
 

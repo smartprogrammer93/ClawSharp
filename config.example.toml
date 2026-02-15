@@ -41,6 +41,11 @@ default_model = "anthropic/claude-sonnet-4-20250514"
 base_url = "http://localhost:11434"  # Ollama server URL
 default_model = "llama3"
 
+[providers.minimax]
+api_key = "your-minimax-api-key"      # Your MiniMax API key
+group_id = "your-group-id"             # Your MiniMax Group ID (optional)
+default_model = "MiniMax-M2.5"         # Default model (MiniMax-M2.1 or MiniMax-M2.5)
+
 # Additional OpenAI-compatible providers
 # [[providers.compatible]]
 # api_key = "..."
