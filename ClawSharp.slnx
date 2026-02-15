@@ -13,6 +13,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ClawSharp.Agent.Tests/ClawSharp.Agent.Tests.csproj" />
+    <Project Path="tests/ClawSharp.Cli.Tests/ClawSharp.Cli.Tests.csproj" />
     <Project Path="tests/ClawSharp.Core.Tests/ClawSharp.Core.Tests.csproj" />
   </Folder>
 </Solution>
