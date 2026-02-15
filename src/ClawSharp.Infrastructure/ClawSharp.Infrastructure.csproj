@@ -4,6 +4,10 @@
     <ProjectReference Include="..\ClawSharp.Core\ClawSharp.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Tomlyn" Version="0.20.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
