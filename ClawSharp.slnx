@@ -16,5 +16,6 @@
     <Project Path="tests/ClawSharp.Cli.Tests/ClawSharp.Cli.Tests.csproj" />
     <Project Path="tests/ClawSharp.Core.Tests/ClawSharp.Core.Tests.csproj" />
     <Project Path="tests/ClawSharp.Infrastructure.Tests/ClawSharp.Infrastructure.Tests.csproj" />
+    <Project Path="tests/ClawSharp.TestHelpers/ClawSharp.TestHelpers.csproj" />
   </Folder>
 </Solution>

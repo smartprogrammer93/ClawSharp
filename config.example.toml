@@ -1,0 +1,102 @@
+# ClawSharp Configuration Example
+# Copy to ~/.clawsharp/config.toml and edit
+
+# ── General ──────────────────────────────────────────────────────────────────
+
+# Working directory for agent files, memory, etc.
+workspace_dir = "~/.clawsharp/workspace"
+
+# Data directory for databases, sessions, etc.
+data_dir = "~/.clawsharp"
+
+# Default LLM provider: "openai", "anthropic", "openrouter", "ollama"
+default_provider = "openai"
+
+# Default model to use
+default_model = "gpt-4o"
+
+# Sampling temperature (0.0–2.0)
+default_temperature = 0.7
+
+# Maximum context window size in tokens
+max_context_tokens = 128000
+
+# ── Providers ────────────────────────────────────────────────────────────────
+
+[providers.openai]
+api_key = "sk-..."                   # Your OpenAI API key
+# base_url = "https://api.openai.com/v1"  # Custom endpoint (optional)
+default_model = "gpt-4o"
+
+[providers.anthropic]
+api_key = "sk-ant-..."              # Your Anthropic API key
+# base_url = "https://api.anthropic.com"
+default_model = "claude-sonnet-4-20250514"
+
+[providers.openrouter]
+api_key = "sk-or-..."               # Your OpenRouter API key
+default_model = "anthropic/claude-sonnet-4-20250514"
+
+[providers.ollama]
+base_url = "http://localhost:11434"  # Ollama server URL
+default_model = "llama3"
+
+# Additional OpenAI-compatible providers
+# [[providers.compatible]]
+# api_key = "..."
+# base_url = "https://api.together.xyz/v1"
+# default_model = "meta-llama/Llama-3-70b-chat-hf"
+
+# ── Memory ───────────────────────────────────────────────────────────────────
+
+[memory]
+db_path = "memory.db"               # SQLite database path (relative to data_dir)
+enable_vector_search = true          # Enable semantic search via embeddings
+# embedding_provider = "openai"      # Provider for generating embeddings
+# embedding_model = "text-embedding-3-small"
+
+# ── Gateway ──────────────────────────────────────────────────────────────────
+
+[gateway]
+host = "127.0.0.1"                   # Bind address
+port = 8080                          # HTTP port
+enable_ui = true                     # Serve the web UI
+# api_key = "your-gateway-api-key"   # Protect the gateway API
+
+# ── Channels ─────────────────────────────────────────────────────────────────
+
+[channels.telegram]
+bot_token = "123456:ABC..."          # Telegram bot token from @BotFather
+allowed_users = ["your_user_id"]     # Restrict to specific user IDs
+use_webhook = false                  # true = webhook mode, false = polling
+
+[channels.discord]
+bot_token = "your-discord-bot-token"
+allowed_guilds = []                  # Empty = allow all guilds
+
+[channels.slack]
+bot_token = "xoxb-..."
+app_token = "xapp-..."
+signing_secret = "..."
+
+# ── Security ─────────────────────────────────────────────────────────────────
+
+[security]
+sandbox_enabled = true               # Restrict command execution
+allowed_commands = ["ls", "cat", "grep", "find", "echo", "date"]
+allowed_paths = []                   # Restrict file access (empty = no restriction)
+# pairing_secret = "..."             # Secret for node pairing
+
+# ── Heartbeat ────────────────────────────────────────────────────────────────
+
+[heartbeat]
+enabled = true
+interval_seconds = 1800              # 30 minutes
+prompt = "Read HEARTBEAT.md if it exists. If nothing needs attention, reply HEARTBEAT_OK."
+
+# ── Tunnel ───────────────────────────────────────────────────────────────────
+
+[tunnel]
+# provider = "cloudflared"           # Tunnel provider
+# token = "..."                      # Auth token
+# domain = "clawsharp.example.com"   # Custom domain

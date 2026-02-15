@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ClawSharp.Agent\ClawSharp.Agent.csproj" />
     <ProjectReference Include="..\..\src\ClawSharp.Core\ClawSharp.Core.csproj" />
+    <ProjectReference Include="..\ClawSharp.TestHelpers\ClawSharp.TestHelpers.csproj" />
   </ItemGroup>
 
 </Project>
