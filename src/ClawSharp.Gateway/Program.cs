@@ -1,12 +1,15 @@
 using ClawSharp.Agent;
+using ClawSharp.Channels;
 using ClawSharp.Core.Channels;
 using ClawSharp.Core.Config;
 using ClawSharp.Core.Providers;
 using ClawSharp.Core.Sessions;
 using ClawSharp.Core.Tools;
+using ClawSharp.Gateway;
+using ClawSharp.Gateway.Endpoints;
+using ClawSharp.Gateway.Hubs;
 using ClawSharp.Infrastructure;
 using ClawSharp.Infrastructure.Messaging;
-using ClawSharp.Gateway.Endpoints;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddSignalR();
 
 // Add ClawSharp services
 var config = new ClawSharpConfig
@@ -67,6 +71,9 @@ if (app.Environment.IsDevelopment())
 
 // Map Gateway endpoints
 app.MapGatewayEndpoints();
+
+// Map SignalR hubs
+app.MapHub<AgentHub>("/hubs/agent");
 
 app.Run();
 
