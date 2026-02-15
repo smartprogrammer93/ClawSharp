@@ -10,6 +10,7 @@
     <Project Path="src/ClawSharp.Providers/ClawSharp.Providers.csproj" />
     <Project Path="src/ClawSharp.Tools/ClawSharp.Tools.csproj" />
     <Project Path="src/ClawSharp.UI/ClawSharp.UI.csproj" />
+    <Project Path="src/ClawSharp.Web/ClawSharp.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ClawSharp.Agent.Tests/ClawSharp.Agent.Tests.csproj" />

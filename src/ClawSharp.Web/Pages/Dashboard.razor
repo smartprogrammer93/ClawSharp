@@ -83,13 +83,22 @@
     private string _gatewayStatus = "Checking...";
     private string _agentStatus = "Checking...";
     private string _memoryStatus = "Checking...";
-    private int _activeSessions;
-    private int _totalMessages;
-    private int _memoryEntries;
+    private int _activeSessions = 0;
+    private int _totalMessages = 0;
+    private int _memoryEntries = 0;
     private readonly List<ActivityItem> _recentActivity = new();
+
+    private void LoadStatistics()
+    {
+        // TODO: Load real statistics from API
+        _activeSessions = 0;
+        _totalMessages = 0;
+        _memoryEntries = 0;
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        LoadStatistics();
         await CheckStatus();
     }
 

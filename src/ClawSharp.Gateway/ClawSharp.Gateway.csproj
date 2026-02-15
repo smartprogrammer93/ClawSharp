@@ -15,7 +15,7 @@
     <ProjectReference Include="..\ClawSharp.Channels\ClawSharp.Channels.csproj" />
     <ProjectReference Include="..\ClawSharp.Core\ClawSharp.Core.csproj" />
     <ProjectReference Include="..\ClawSharp.Infrastructure\ClawSharp.Infrastructure.csproj" />
-    <ProjectReference Include="..\ClawSharp.UI\ClawSharp.UI.csproj" />
+    <ProjectReference Include="..\ClawSharp.Web\ClawSharp.Web.csproj" />
   </ItemGroup>
 
 </Project>
