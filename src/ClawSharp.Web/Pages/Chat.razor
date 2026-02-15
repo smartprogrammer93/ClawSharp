@@ -1,0 +1,169 @@
+@page "/chat"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Chat - ClawSharp</PageTitle>
+
+<div class="chat-container">
+    <div class="messages-panel">
+        @foreach (var message in _messages)
+        {
+            <div class="message @(message.IsUser ? "user-message" : "agent-message")">
+                <div class="message-header">
+                    <span class="sender">@(message.IsUser ? "You" : "Agent")</span>
+                    <span class="timestamp">@message.Timestamp.ToString("HH:mm:ss")</span>
+                </div>
+                <div class="message-content">@message.Content</div>
+            </div>
+        }
+        @if (_isStreaming)
+        {
+            <div class="message agent-message streaming">
+                <div class="message-header">
+                    <span class="sender">Agent</span>
+                    <span class="timestamp">@DateTime.Now.ToString("HH:mm:ss")</span>
+                </div>
+                <div class="message-content">@_streamingContent<span class="cursor">▌</span></div>
+            </div>
+        }
+    </div>
+    
+    <div class="input-panel">
+        <textarea @bind="_userInput" @bind:event="oninput" @onkeydown="HandleKeyDown" 
+                  placeholder="Type a message..." disabled="@(!IsConnected)"></textarea>
+        <button @onclick="SendMessage" disabled="@(!IsConnected || string.IsNullOrWhiteSpace(_userInput))">
+            Send
+        </button>
+    </div>
+    
+    <div class="status-bar">
+        @if (IsConnected)
+        {
+            <span class="status connected">● Connected</span>
+        }
+        else
+        {
+            <span class="status disconnected">○ Disconnected</span>
+            <button @onclick="Connect" class="reconnect-btn">Reconnect</button>
+        }
+    </div>
+</div>
+
+@code {
+    private HubConnection? _hubConnection;
+    private readonly List<ChatMessage> _messages = new();
+    private string _userInput = string.Empty;
+    private string _streamingContent = string.Empty;
+    private bool _isStreaming;
+    private string? _currentSessionId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Connect();
+    }
+
+    private async Task Connect()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/agent"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<string>("SessionStarted", (sessionId) =>
+        {
+            _currentSessionId = sessionId;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<string>("AgentChunk", (chunk) =>
+        {
+            _isStreaming = true;
+            _streamingContent += chunk;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<string>("AgentResponse", (response) =>
+        {
+            _messages.Add(new ChatMessage
+            {
+                Content = _isStreaming ? _streamingContent : response,
+                IsUser = false,
+                Timestamp = DateTime.Now
+            });
+            _isStreaming = false;
+            _streamingContent = string.Empty;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<string>("Error", (error) =>
+        {
+            _messages.Add(new ChatMessage
+            {
+                Content = $"Error: {error}",
+                IsUser = false,
+                Timestamp = DateTime.Now
+            });
+            _isStreaming = false;
+            _streamingContent = string.Empty;
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            _messages.Add(new ChatMessage
+            {
+                Content = $"Failed to connect: {ex.Message}",
+                IsUser = false,
+                Timestamp = DateTime.Now
+            });
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (_hubConnection is not null && !string.IsNullOrWhiteSpace(_userInput))
+        {
+            _messages.Add(new ChatMessage
+            {
+                Content = _userInput,
+                IsUser = true,
+                Timestamp = DateTime.Now
+            });
+
+            var message = _userInput;
+            _userInput = string.Empty;
+            
+            await _hubConnection.SendAsync("SendMessage", message);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+
+    private class ChatMessage
+    {
+        public string Content { get; set; } = string.Empty;
+        public bool IsUser { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}

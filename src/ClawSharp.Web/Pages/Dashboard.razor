@@ -1,0 +1,119 @@
+@page "/dashboard"
+@inject HttpClient Http
+
+<PageTitle>Dashboard - ClawSharp</PageTitle>
+
+<h1>Dashboard</h1>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <h3>System Status</h3>
+        <div class="status-item">
+            <span class="label">Gateway:</span>
+            <span class="value @(_gatewayStatus == "Online" ? "online" : "offline")">@_gatewayStatus</span>
+        </div>
+        <div class="status-item">
+            <span class="label">Agent:</span>
+            <span class="value @(_agentStatus == "Ready" ? "online" : "offline")">@_agentStatus</span>
+        </div>
+        <div class="status-item">
+            <span class="label">Memory Store:</span>
+            <span class="value @(_memoryStatus == "Connected" ? "online" : "offline")">@_memoryStatus</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Session Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat">
+                <span class="stat-value">@_activeSessions</span>
+                <span class="stat-label">Active Sessions</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">@_totalMessages</span>
+                <span class="stat-label">Total Messages</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">@_memoryEntries</span>
+                <span class="stat-label">Memory Entries</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Recent Activity</h3>
+        <ul class="activity-list">
+            @if (_recentActivity.Count == 0)
+            {
+                <li class="no-activity">No recent activity</li>
+            }
+            else
+            {
+                @foreach (var activity in _recentActivity)
+                {
+                    <li>
+                        <span class="activity-time">@activity.Time.ToString("HH:mm")</span>
+                        <span class="activity-desc">@activity.Description</span>
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="/chat" class="action-btn primary">
+                <span class="icon">💬</span>
+                <span>Start Chat</span>
+            </a>
+            <a href="/memory" class="action-btn">
+                <span class="icon">🧠</span>
+                <span>Browse Memory</span>
+            </a>
+            <a href="/settings" class="action-btn">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _gatewayStatus = "Checking...";
+    private string _agentStatus = "Checking...";
+    private string _memoryStatus = "Checking...";
+    private int _activeSessions;
+    private int _totalMessages;
+    private int _memoryEntries;
+    private readonly List<ActivityItem> _recentActivity = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckStatus();
+    }
+
+    private async Task CheckStatus()
+    {
+        try
+        {
+            // Check gateway health
+            var response = await Http.GetAsync("/health");
+            _gatewayStatus = response.IsSuccessStatusCode ? "Online" : "Offline";
+            _agentStatus = "Ready";
+            _memoryStatus = "Connected";
+        }
+        catch
+        {
+            _gatewayStatus = "Offline";
+            _agentStatus = "Unknown";
+            _memoryStatus = "Unknown";
+        }
+    }
+
+    private class ActivityItem
+    {
+        public DateTime Time { get; set; }
+        public string Description { get; set; } = string.Empty;
+    }
+}

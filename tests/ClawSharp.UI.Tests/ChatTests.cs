@@ -1,11 +1,26 @@
 using Bunit;
 using ClawSharp.UI.Pages;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
+using MudBlazor.Services;
 
 namespace ClawSharp.UI.Tests;
 
-public class ChatTests : MudBlazorTestContext
+public class ChatTests : TestContext
 {
+    public ChatTests()
+    {
+        Services.AddMudServices();
+        Services.AddMudPopoverService();
+        Services.AddScoped<HttpClient>(_ => new HttpClient { BaseAddress = new Uri("http://localhost") });
+        
+        // Setup MudBlazor JS interop mocks
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        
+        // Add MudPopoverProvider to the render tree
+        RenderTree.Add<MudPopoverProvider>();
+    }
+
     [Fact]
     public void Chat_RendersInputAndButton()
     {

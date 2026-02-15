@@ -1,0 +1,183 @@
+@page "/memory"
+@inject HttpClient Http
+
+<PageTitle>Memory Browser - ClawSharp</PageTitle>
+
+<h1>Memory Browser</h1>
+
+<div class="memory-browser">
+    <div class="search-panel">
+        <input type="text" @bind="_searchQuery" @bind:event="oninput" 
+               placeholder="Search memories..." class="search-input" />
+        <button @onclick="Search" class="search-btn">Search</button>
+    </div>
+
+    <div class="memory-list">
+        @if (_isLoading)
+        {
+            <div class="loading">Loading memories...</div>
+        }
+        else if (_memories.Count == 0)
+        {
+            <div class="empty-state">
+                <span class="icon">🧠</span>
+                <p>No memories found</p>
+                <p class="hint">Memories are created as you interact with the agent</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var memory in _memories)
+            {
+                <div class="memory-card @(memory.IsExpanded ? "expanded" : "")">
+                    <div class="memory-header" @onclick="() => ToggleExpand(memory)">
+                        <span class="memory-type">@memory.Type</span>
+                        <span class="memory-date">@memory.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        <span class="expand-icon">@(memory.IsExpanded ? "▼" : "▶")</span>
+                    </div>
+                    @if (memory.IsExpanded)
+                    {
+                        <div class="memory-content">
+                            <div class="memory-text">@memory.Content</div>
+                            <div class="memory-meta">
+                                <span class="meta-item">ID: @memory.Id</span>
+                                @if (memory.Tags.Any())
+                                {
+                                    <span class="meta-item">Tags: @string.Join(", ", memory.Tags)</span>
+                                }
+                            </div>
+                            <div class="memory-actions">
+                                <button @onclick="() => DeleteMemory(memory)" class="delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <div class="add-memory-panel">
+        <h3>Add Memory</h3>
+        <div class="form-group">
+            <label>Type</label>
+            <select @bind="_newMemory.Type">
+                <option value="fact">Fact</option>
+                <option value="preference">Preference</option>
+                <option value="note">Note</option>
+                <option value="context">Context</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Content</label>
+            <textarea @bind="_newMemory.Content" placeholder="Enter memory content..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Tags (comma-separated)</label>
+            <input type="text" @bind="_newMemory.TagsInput" placeholder="e.g., work, important" />
+        </div>
+        <button @onclick="AddMemory" class="add-btn" 
+                disabled="@string.IsNullOrWhiteSpace(_newMemory.Content)">
+            Add Memory
+        </button>
+    </div>
+</div>
+
+@code {
+    private string _searchQuery = string.Empty;
+    private bool _isLoading = true;
+    private readonly List<MemoryItem> _memories = new();
+    private NewMemoryModel _newMemory = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMemories();
+    }
+
+    private async Task LoadMemories()
+    {
+        _isLoading = true;
+        try
+        {
+            // TODO: Call actual memory API
+            await Task.Delay(500); // Simulate loading
+            _memories.Clear();
+        }
+        catch
+        {
+            // Handle error
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            await LoadMemories();
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            // TODO: Call search API with _searchQuery
+            await Task.Delay(300);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ToggleExpand(MemoryItem memory)
+    {
+        memory.IsExpanded = !memory.IsExpanded;
+    }
+
+    private async Task DeleteMemory(MemoryItem memory)
+    {
+        // TODO: Call delete API
+        _memories.Remove(memory);
+        await Task.CompletedTask;
+    }
+
+    private async Task AddMemory()
+    {
+        if (string.IsNullOrWhiteSpace(_newMemory.Content))
+            return;
+
+        var memory = new MemoryItem
+        {
+            Id = Guid.NewGuid().ToString(),
+            Type = _newMemory.Type,
+            Content = _newMemory.Content,
+            Tags = _newMemory.TagsInput?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList() ?? [],
+            CreatedAt = DateTime.Now
+        };
+
+        // TODO: Call add API
+        _memories.Insert(0, memory);
+        _newMemory = new NewMemoryModel();
+        await Task.CompletedTask;
+    }
+
+    private class MemoryItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Type { get; set; } = "fact";
+        public string Content { get; set; } = string.Empty;
+        public List<string> Tags { get; set; } = [];
+        public DateTime CreatedAt { get; set; }
+        public bool IsExpanded { get; set; }
+    }
+
+    private class NewMemoryModel
+    {
+        public string Type { get; set; } = "fact";
+        public string Content { get; set; } = string.Empty;
+        public string TagsInput { get; set; } = string.Empty;
+    }
+}

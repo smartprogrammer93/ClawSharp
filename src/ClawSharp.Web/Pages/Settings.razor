@@ -1,0 +1,172 @@
+@page "/settings"
+@inject HttpClient Http
+
+<PageTitle>Settings - ClawSharp</PageTitle>
+
+<h1>Settings</h1>
+
+<div class="settings-container">
+    <section class="settings-section">
+        <h2>LLM Provider</h2>
+        <div class="form-group">
+            <label>Default Provider</label>
+            <select @bind="_settings.DefaultProvider">
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="openai">OpenAI (GPT)</option>
+                <option value="ollama">Ollama (Local)</option>
+                <option value="test">Test Provider</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Default Model</label>
+            <input type="text" @bind="_settings.DefaultModel" placeholder="e.g., claude-3-opus" />
+        </div>
+        <div class="form-group">
+            <label>API Key</label>
+            <input type="password" @bind="_settings.ApiKey" placeholder="Enter API key" />
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <h2>Agent Behavior</h2>
+        <div class="form-group">
+            <label>System Prompt</label>
+            <textarea @bind="_settings.SystemPrompt" rows="4" 
+                      placeholder="Enter system prompt for the agent..."></textarea>
+        </div>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="enableStreaming" @bind="_settings.EnableStreaming" />
+            <label for="enableStreaming">Enable streaming responses</label>
+        </div>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="enableMemory" @bind="_settings.EnableMemory" />
+            <label for="enableMemory">Enable memory/context retention</label>
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <h2>Directories</h2>
+        <div class="form-group">
+            <label>Data Directory</label>
+            <input type="text" @bind="_settings.DataDir" placeholder="/path/to/data" />
+        </div>
+        <div class="form-group">
+            <label>Workspace Directory</label>
+            <input type="text" @bind="_settings.WorkspaceDir" placeholder="/path/to/workspace" />
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <h2>Channels</h2>
+        <div class="channels-list">
+            @foreach (var channel in _settings.Channels)
+            {
+                <div class="channel-item">
+                    <span class="channel-name">@channel.Name</span>
+                    <span class="channel-type">@channel.Type</span>
+                    <span class="channel-status @(channel.Enabled ? "enabled" : "disabled")">
+                        @(channel.Enabled ? "Enabled" : "Disabled")
+                    </span>
+                    <button @onclick="() => channel.Enabled = !channel.Enabled" class="toggle-btn">
+                        @(channel.Enabled ? "Disable" : "Enable")
+                    </button>
+                </div>
+            }
+            @if (!_settings.Channels.Any())
+            {
+                <div class="empty-state">No channels configured</div>
+            }
+        </div>
+    </section>
+
+    <div class="settings-actions">
+        <button @onclick="SaveSettings" class="save-btn" disabled="@_isSaving">
+            @(_isSaving ? "Saving..." : "Save Settings")
+        </button>
+        <button @onclick="ResetSettings" class="reset-btn">Reset to Defaults</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="status-message @(_isError ? "error" : "success")">
+            @_statusMessage
+        </div>
+    }
+</div>
+
+@code {
+    private SettingsModel _settings = new();
+    private bool _isSaving;
+    private string _statusMessage = string.Empty;
+    private bool _isError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        // TODO: Load from API
+        _settings = new SettingsModel
+        {
+            DefaultProvider = "test",
+            DefaultModel = "test-model",
+            EnableStreaming = true,
+            EnableMemory = true,
+            DataDir = "./data",
+            WorkspaceDir = "./workspace"
+        };
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveSettings()
+    {
+        _isSaving = true;
+        _statusMessage = string.Empty;
+        
+        try
+        {
+            // TODO: Save to API
+            await Task.Delay(500);
+            _statusMessage = "Settings saved successfully";
+            _isError = false;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to save settings: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ResetSettings()
+    {
+        await LoadSettings();
+        _statusMessage = "Settings reset to defaults";
+        _isError = false;
+    }
+
+    private class SettingsModel
+    {
+        public string DefaultProvider { get; set; } = "test";
+        public string DefaultModel { get; set; } = "test-model";
+        public string ApiKey { get; set; } = string.Empty;
+        public string SystemPrompt { get; set; } = string.Empty;
+        public bool EnableStreaming { get; set; } = true;
+        public bool EnableMemory { get; set; } = true;
+        public string DataDir { get; set; } = string.Empty;
+        public string WorkspaceDir { get; set; } = string.Empty;
+        public List<ChannelConfig> Channels { get; set; } = [];
+    }
+
+    private class ChannelConfig
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool Enabled { get; set; }
+    }
+}
