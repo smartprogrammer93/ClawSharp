@@ -18,7 +18,6 @@ public class SessionsPageTests : TestContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         
         // Add MudPopoverProvider to the render tree
-        RenderTree.Add<MudPopoverProvider>();
     }
 
     [Fact]

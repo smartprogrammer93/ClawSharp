@@ -14,6 +14,7 @@ public static class CliEntryPoint
         rootCommand.Add(new AgentCommand());
         rootCommand.Add(new GatewayCommand());
         rootCommand.Add(new OnboardCommand());
+        rootCommand.Add(new ServiceCommand());
 
         var configOption = new Option<string>("--config") { Description = "Path to config.toml" };
         var verboseOption = new Option<bool>("--verbose") { Description = "Enable verbose logging" };

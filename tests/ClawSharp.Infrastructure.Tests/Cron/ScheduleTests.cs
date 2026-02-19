@@ -32,8 +32,12 @@ public class CronScheduleExprTests
     public void IsDue_WhenRecentlyRun_ReturnsFalse()
     {
         var schedule = new CronScheduleExpr("*/5 * * * *");
-        var lastRun = DateTimeOffset.UtcNow.AddSeconds(-30);
-        schedule.IsDue(DateTimeOffset.UtcNow, lastRun).Should().BeFalse();
+        // Use a fixed, deterministic time in the middle of a 5-minute interval
+        // to avoid flakiness when the test runs near a boundary
+        var now = new DateTimeOffset(2024, 1, 15, 10, 2, 30, TimeSpan.Zero);  // 10:02:30
+        var lastRun = now.AddSeconds(-30);                                       // 10:02:00
+        // Next occurrence after 10:02:00 = 10:05:00, which is NOT <= 10:02:30
+        schedule.IsDue(now, lastRun).Should().BeFalse();
     }
 
     [Fact]

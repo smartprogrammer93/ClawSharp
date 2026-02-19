@@ -16,9 +16,10 @@ public class MemoryBrowserTests : TestContext
         
         // Setup MudBlazor JS interop mocks
         JSInterop.Mode = JSRuntimeMode.Loose;
-        
-        // Add MudPopoverProvider to the render tree
-        RenderTree.Add<MudPopoverProvider>();
+
+        // MudBlazor 8.x: render MudPopoverProvider as a standalone component
+        // (RenderTree.Add is not supported for this component in bUnit + MudBlazor 8)
+        RenderComponent<MudPopoverProvider>();
     }
 
     [Fact]
